@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supply Chain Blockchain</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .block {
+            background: white;
+            padding: 15px;
+            margin: 20px auto;
+            width: 80%;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        .transaction {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .transaction:last-child {
+            border-bottom: none;
+        }
+        .hash {
+            word-wrap: break-word;
+            font-family: monospace;
+        }
+        .form-container {
+            margin: 20px auto;
+            padding: 20px;
+            width: 50%;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📜 Supply Chain Blockchain Explorer</h1>
+
+    <div class="form-container">
+        <h3>Add a Transaction</h3>
+        <input type="text" id="item_id" placeholder="Item ID" required>
+        <input type="text" id="description" placeholder="Description" required>
+        <input type="text" id="signature" placeholder="Signature" required>
+        <button onclick="addTransaction()">Add Transaction</button>
+    </div>
+
+    <button onclick="mineBlock()">⛏️ Mine Block</button>
+    <button onclick="validateBlockchain()">✅ Validate Blockchain</button>
+
+    <h2>Blockchain Data</h2>
+    <div id="blockchain"></div>
+
+    <script>
+        function fetchBlockchain() {
+    fetch('/blocks?t=' + new Date().getTime())  // ✅ Prevent caching
+        .then(response => response.json())
+        .then(data => {
+            let html = "";
+            data.forEach(block => {
+                html += `
+                <div class="block">
+                    <h3>📦 Block ${block.index}</h3>
+                    <p><strong>⏳ Timestamp:</strong> ${block.timestamp}</p>
+                    <p><strong>🔗 Previous Hash:</strong> <span class="hash">${block.prev_hash}</span></p>
+                    <p><strong>🔗 Hash:</strong> <span class="hash">${block.hash}</span></p>
+                    <p><strong>🔢 Nonce:</strong> ${block.nonce}</p>
+                    <h4>📝 Transactions:</h4>`;
+
+                if (block.transactions.length > 0) {
+                    block.transactions.forEach(tx => {
+                        html += `
+                        <div class="transaction">
+                            <p><strong>🔹 Item ID:</strong> ${tx.item_id}</p>
+                            <p><strong>📜 Description:</strong> ${tx.description}</p>
+                            <p><strong>✍️ Signature:</strong> ${tx.signature}</p>
+                        </div>`;
+                    });
+                } else {
+                    html += `<p>No Transactions</p>`;
+                }
+
+                html += `</div>`; 
+            });
+
+            document.getElementById("blockchain").innerHTML = html;
+        })
+        .catch(error => console.error("Error fetching blockchain:", error));
+}
+
+function addTransaction() {
+    const item_id = document.getElementById("item_id").value;
+    const description = document.getElementById("description").value;
+    const signature = document.getElementById("signature").value;
+
+    fetch("/add_transaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item_id, description, signature })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        fetchBlockchain();  // ✅ Ensure blockchain reloads after transaction
+    })
+    .catch(error => console.error("Error adding transaction:", error));
+}
+
+function mineBlock() {
+    fetch("/mine_block", { method: "POST" })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            fetchBlockchain();  // ✅ Reload blockchain after mining
+        })
+        .catch(error => console.error("Error mining block:", error));
+}
+
+function validateBlockchain() {
+    fetch("/validate")
+        .then(response => response.json())
+        .then(data => alert(data.status))
+        .catch(error => console.error("Error validating blockchain:", error));
+}
+
+fetchBlockchain();  // ✅ Load blockchain when page loads
+
+    </script>
+
+</body>
+</html>
